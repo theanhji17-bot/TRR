@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Giải Quyết & Trực Quan Hóa Lý Thuyết Đồ Thị</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        canvas { touch-action: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <header class="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/10 p-2.5 rounded-xl backdrop-blur-md border border-white/20">
+                    <i class="fa-solid fa-project-diagram text-2xl text-cyan-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">GraphTheory Lab & Solver</h1>
+                    <p class="text-xs text-blue-200">Hệ thống hỗ trợ học tập & Giải toán Lý thuyết Đồ thị</p>
+                </div>
+            </div>
+            <nav class="flex flex-wrap gap-2 bg-black/20 p-1.5 rounded-xl backdrop-blur-md border border-white/10">
+                <button onclick="switchTab('tab-survey')" id="btn-survey" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-blue-900 shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie"></i> 1. Khảo Sát Đồ Thị
+                </button>
+                <button onclick="switchTab('tab-euler-hamilton')" id="btn-euler-hamilton" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-white hover:bg-white/10 flex items-center gap-2">
+                    <i class="fa-solid fa-route"></i> 2. Euler & Hamilton
+                </button>
+                <button onclick="switchTab('tab-mst-shortest')" id="btn-mst-shortest" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-white hover:bg-white/10 flex items-center gap-2">
+                    <i class="fa-solid fa-network-wired"></i> 3. MST & Đường Đi Ngắn Nhất
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+
+        <!-- ================= TAB 1: KHẢO SÁT ĐỒ THỊ ================= -->
+        <div id="tab-survey" class="tab-content active space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="border-b border-slate-100 pb-4 mb-6 flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">Phần 1</span>
+                        <h2 class="text-xl font-bold text-slate-900 mt-1">Khảo sát Đồ Thị Cơ Bản</h2>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="loadSampleGraph(1)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">Đồ thị mẫu A</button>
+                        <button onclick="loadSampleGraph(2)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">Đồ thị mẫu B</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Control panel -->
+                    <div class="lg:col-span-5 space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Danh sách cạnh (Ví dụ: A-B, B-C, C-D hoặc 1-2, 2-3)</label>
+                            <textarea id="survey-edges" rows="4" class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="A-B, B-C, C-A, C-D">A-B, B-C, C-A, C-D, D-E</textarea>
+                            <p class="text-xs text-slate-500 mt-1">Mỗi dòng hoặc cách nhau bởi dấu phẩy. Định dạng: `U-V` hoặc `U V`.</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="survey-directed" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                                <span class="text-sm font-medium text-slate-700">Đồ thị có hướng (Directed)</span>
+                            </label>
+                        </div>
+                        <button onclick="analyzeGraph()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl shadow-md transition duration-200 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i> Phân Tích Đồ Thị
+                        </button>
+                    </div>
+
+                    <!-- Visualizer Canvas -->
+                    <div class="lg:col-span-7 bg-slate-900 rounded-2xl relative overflow-hidden flex flex-col min-h-[350px]">
+                        <div class="absolute top-3 left-3 bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-xs text-white/80 border border-white/10">
+                            Trực quan hóa đồ thị (Kéo thả đỉnh để sắp xếp)
+                        </div>
+                        <canvas id="canvas-survey" class="w-full h-full flex-grow cursor-grab active:cursor-grabbing"></canvas>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="survey-results" class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 hidden">
+                    <div class="bg-blue-50/50 border border-blue-100 rounded-2xl p-5">
+                        <h3 class="font-bold text-blue-900 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-list-ul"></i> a) Danh sách kề</h3>
+                        <div id="result-adj-list" class="space-y-1.5 text-sm font-mono text-slate-700 max-h-48 overflow-y-auto"></div>
+                    </div>
+                    <div class="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-5">
+                        <h3 class="font-bold text-emerald-900 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-calculator"></i> b) Bậc của từng đỉnh</h3>
+                        <div id="result-degrees" class="space-y-1.5 text-sm font-mono text-slate-700 max-h-48 overflow-y-auto"></div>
+                    </div>
+                    <div class="bg-purple-50/50 border border-purple-100 rounded-2xl p-5">
+                        <h3 class="font-bold text-purple-900 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-circle-nodes"></i> c) Tính liên thông</h3>
+                        <div id="result-connectivity" class="text-sm text-slate-700 space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: CHU TRÌNH EULER & HAMILTON ================= -->
+        <div id="tab-euler-hamilton" class="tab-content space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="border-b border-slate-100 pb-4 mb-6 flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <span class="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">Phần 2 & 3</span>
+                        <h2 class="text-xl font-bold text-slate-900 mt-1">Chu Trình Euler & Hamilton</h2>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="loadEHSample(1)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">Mẫu Euler</button>
+                        <button onclick="loadEHSample(2)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">Mẫu Hamilton</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-5 space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Nhập danh sách cạnh (Vô hướng)</label>
+                            <textarea id="eh-edges" rows="4" class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" placeholder="A-B, B-C, C-A">A-B, B-C, C-D, D-E, E-A, A-C, C-E</textarea>
+                            <p class="text-xs text-slate-500 mt-1">Hệ thống sẽ kiểm tra điều kiện Euler & Hamilton, đề xuất sửa đổi và tìm chu trình cụ thể.</p>
+                        </div>
+                        <button onclick="analyzeEulerHamilton()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl shadow-md transition duration-200 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Phân Tích & Tìm Chu Trình
+                        </button>
+                    </div>
+
+                    <div class="lg:col-span-7 bg-slate-900 rounded-2xl relative overflow-hidden flex flex-col min-h-[350px]">
+                        <div class="absolute top-3 left-3 bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-xs text-white/80 border border-white/10">
+                            Trực quan hóa Đồ thị & Đường đi
+                        </div>
+                        <canvas id="canvas-eh" class="w-full h-full flex-grow cursor-grab active:cursor-grabbing"></canvas>
+                    </div>
+                </div>
+
+                <!-- Analysis Results -->
+                <div id="eh-results" class="mt-8 space-y-6 hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Euler Analysis -->
+                        <div class="bg-indigo-50/40 border border-indigo-100 rounded-2xl p-5 space-y-3">
+                            <h3 class="font-bold text-indigo-900 text-base flex items-center gap-2"><i class="fa-solid fa-route"></i> a) Khảo sát Chu trình Euler</h3>
+                            <div id="euler-status" class="text-sm text-slate-700 space-y-2"></div>
+                            <div id="euler-repair" class="text-sm text-slate-700 bg-white/80 p-3 rounded-xl border border-indigo-200 hidden"></div>
+                            <div id="euler-path" class="text-sm font-mono bg-indigo-900 text-white p-3 rounded-xl shadow-inner hidden"></div>
+                        </div>
+
+                        <!-- Hamilton Analysis -->
+                        <div class="bg-teal-50/40 border border-teal-100 rounded-2xl p-5 space-y-3">
+                            <h3 class="font-bold text-teal-900 text-base flex items-center gap-2"><i class="fa-solid fa-circle-dot"></i> b) Khảo sát Chu trình Hamilton</h3>
+                            <div id="hamilton-status" class="text-sm text-slate-700 space-y-2"></div>
+                            <div id="hamilton-repair" class="text-sm text-slate-700 bg-white/80 p-3 rounded-xl border border-teal-200 hidden"></div>
+                            <div id="hamilton-path" class="text-sm font-mono bg-teal-900 text-white p-3 rounded-xl shadow-inner hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- Comparison & Real-world Application (Part 4) -->
+                    <div class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-xl">
+                        <h3 class="text-lg font-bold text-cyan-300 mb-4 flex items-center gap-2"><i class="fa-solid fa-lightbulb"></i> 4. So sánh & Vận dụng thực tế</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-200">
+                            <div class="bg-white/5 border border-white/10 p-4 rounded-xl space-y-2">
+                                <h4 class="font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-scale-balanced text-cyan-400"></i> So sánh Euler và Hamilton</h4>
+                                <ul class="list-disc list-inside space-y-1 text-slate-300 text-xs">
+                                    <li><strong>Tiêu chí duyệt:</strong> Euler đi qua mỗi <em>cạnh</em> đúng một lần; Hamilton đi qua mỗi <em>đỉnh</em> đúng một lần.</li>
+                                    <li><strong>Độ phức tạp bài toán:</strong> Euler giải quyết bằng thuật toán đa thức (kiểm tra bậc chẵn/lẻ). Hamilton thuộc lớp NP-complete (khó, chưa có thuật toán đa thức tối ưu tổng quát).</li>
+                                </ul>
+                            </div>
+                            <div class="bg-white/5 border border-white/10 p-4 rounded-xl space-y-2">
+                                <h4 class="font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-city text-cyan-400"></i> Ứng dụng thực tế</h4>
+                                <p class="text-xs text-slate-300"><strong>Chu trình Euler:</strong> Kiểm tra đường dây điện, tuần tra an ninh toàn bộ các tuyến đường phố, quét dọn đường phố, phun thuốc khử khuẩn.</p>
+                                <p class="text-xs text-slate-300"><strong>Chu trình Hamilton:</strong> Bài toán người đưa thư (TSP), lập lịch tham quan các trạm dừng chân trên campus, giao hàng tối ưu đến các kho bãi khách hàng.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: MST & ĐƯỜNG ĐI NGẮN NHẤT ================= -->
+        <div id="tab-mst-shortest" class="tab-content space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="border-b border-slate-100 pb-4 mb-6 flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">Cây Khung & Đường Đi</span>
+                        <h2 class="text-xl font-bold text-slate-900 mt-1">Cây Khung Nhỏ Nhất & Đường Đi Ngắn Nhất</h2>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="loadWeightedSample(1)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">Mẫu Đồ Thị Có Trọng Số</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-5 space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Nhập cạnh có trọng số (Định dạng: U-V:W hoặc U V W)</label>
+                            <textarea id="weighted-edges" rows="5" class="w-full rounded-xl border border-slate-300 p-3 text-sm font-mono focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" placeholder="A-B:2, A-C:3, B-C:1, B-D:4, C-D:1">A-B:2, A-C:3, B-C:1, B-D:4, C-D:1, C-E:5, D-E:2</textarea>
+                            <p class="text-xs text-slate-500 mt-1">Ví dụ: `A-B:2` có nghĩa là cạnh giữa A và B với trọng số là 2.</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Thuật toán</label>
+                                <select id="algo-select" onchange="toggleAlgoParams()" class="w-full rounded-xl border border-slate-300 p-2.5 text-sm bg-white outline-none">
+                                    <option value="kruskal">Kruskal (MST)</option>
+                                    <option value="prim">Prim (MST)</option>
+                                    <option value="dijkstra">Dijkstra (Đường đi ngắn nhất)</option>
+                                </select>
+                            </div>
+                            <div id="dijkstra-source-container" class="hidden">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Đỉnh xuất phát</label>
+                                <input type="text" id="dijkstra-source" value="A" class="w-full rounded-xl border border-slate-300 p-2 text-sm uppercase text-center font-bold outline-none">
+                            </div>
+                        </div>
+
+                        <button onclick="runWeightedAlgorithm()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 px-4 rounded-xl shadow-md transition duration-200 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play"></i> Chạy Mô Phỏng Thuật Toán
+                        </button>
+                    </div>
+
+                    <div class="lg:col-span-7 bg-slate-900 rounded-2xl relative overflow-hidden flex flex-col min-h-[400px]">
+                        <div class="absolute top-3 left-3 bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-xs text-white/80 border border-white/10 flex items-center gap-2">
+                            <span id="canvas-title-badge">Mô phỏng Kruskal</span>
+                        </div>
+                        <canvas id="canvas-weighted" class="w-full h-full flex-grow cursor-grab active:cursor-grabbing"></canvas>
+                        
+                        <!-- Playback controls -->
+                        <div class="absolute bottom-3 left-3 right-3 bg-black/60 backdrop-blur-md p-3 rounded-xl border border-white/10 flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-2">
+                                <button onclick="stepPrev()" class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center transition"><i class="fa-solid fa-backward-step text-xs"></i></button>
+                                <button onclick="togglePlay()" id="btn-play" class="bg-amber-500 hover:bg-amber-600 text-white w-9 h-9 rounded-lg flex items-center justify-center shadow transition"><i class="fa-solid fa-play text-xs"></i></button>
+                                <button onclick="stepNext()" class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center transition"><i class="fa-solid fa-forward-step text-xs"></i></button>
+                            </div>
+                            <div id="step-indicator" class="text-xs font-medium text-white/90">Bước 0 / 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step explanation and final result -->
+                <div id="weighted-results" class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+                    <div class="bg-amber-50/50 border border-amber-100 rounded-2xl p-5 space-y-3">
+                        <h3 class="font-bold text-amber-900 text-sm flex items-center gap-2"><i class="fa-solid fa-list-check"></i> Diễn biến từng bước giải</h3>
+                        <div id="step-explanation" class="text-sm text-slate-700 bg-white p-4 rounded-xl border border-amber-200/60 shadow-sm min-h-[100px] font-mono"></div>
+                    </div>
+                    <div class="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-5 space-y-3">
+                        <h3 class="font-bold text-emerald-900 text-sm flex items-center gap-2"><i class="fa-solid fa-square-check"></i> Kết quả tối ưu cuối cùng</h3>
+                        <div id="final-optimal-result" class="text-sm text-slate-700 bg-white p-4 rounded-xl border border-emerald-200/60 shadow-sm min-h-[100px]"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+        <p>Hệ thống hỗ trợ học tập Lý thuyết Đồ thị & Giải quyết bài toán thực tế © 2026</p>
+    </footer>
+
+    <script>
+        // --- TAB MANAGEMENT ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('header nav button').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-blue-900', 'shadow-md');
+                btn.classList.add('text-white', 'hover:bg-white/10');
+            });
+            document.getElementById(tabId).classList.add('active');
+            let activeBtn = document.getElementById('btn-' + tabId.replace('tab-', ''));
+            if(activeBtn) {
+                activeBtn.classList.add('bg-white', 'text-blue-900', 'shadow-md');
+                activeBtn.classList.remove('text-white', 'hover:bg-white/10');
+            }
+            // Resize canvas when tab changes
+            setTimeout(() => {
+                initCanvas('canvas-survey');
+                initCanvas('canvas-eh');
+                initCanvas('canvas-weighted');
+            }, 50);
+        }
+
+        // --- GRAPH PARSER HELPER ---
+        function parseGraphInput(text, isWeighted = false) {
+            let lines = text.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0);
+            let edges = [];
+            let nodesSet = new Set();
+
+            lines.forEach(line => {
+                // Matches U-V:W or U V W or U-V
+                let match = line.match(/^([A-Za-z0-9]+)\s*[\-\s]\s*([A-Za-z0-9]+)(?:\s*[:\s]\s*([0-9.]+))?/);
+                if (match) {
+                    let u = match[1].toUpperCase();
+                    let v = match[2].toUpperCase();
+                    let w = match[3] !== undefined ? parseFloat(match[3]) : 1;
+                    nodesSet.add(u);
+                    nodesSet.add(v);
+                    edges.push({ u, v, weight: w });
+                }
+            });
+
+            let nodes = Array.from(nodesSet).sort();
+            let adjList = {};
+            nodes.forEach(n => adjList[n] = []);
+
+            edges.forEach(e => {
+                if (!adjList[e.u].some(item => item.node === e.v)) {
+                    adjList[e.u].push({ node: e.v, weight: e.weight });
+                }
+                // For undirected graph by default unless directed checkbox is checked in Tab 1
+                if (!isWeighted && document.getElementById('survey-directed') && !document.getElementById('survey-directed').checked) {
+                    if (!adjList[e.v].some(item => item.node === e.u)) {
+                        adjList[e.v].push({ node: e.u, weight: e.weight });
+                    }
+                }
+            });
+
+            return { nodes, edges, adjList };
+        }
+
+        // --- INTERACTIVE CANVAS ENGINE ---
+        class GraphVisualizer {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.nodes = {}; // { id: {x, y, vx, vy} }
+                this.edges = [];
+                this.highlightedEdges = new Set();
+                this.highlightedNodes = new Set();
+                this.draggingNode = null;
+                this.isAnimating = false;
+                
+                this.setupEvents();
+            }
+
+            resize() {
+                let rect = this.canvas.parentElement.getBoundingClientRect();
+                this.canvas.width = rect.width;
+                this.canvas.height = rect.height || 350;
+            }
+
+            setupEvents() {
+                this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                this.canvas.addEventListener('mouseup', () => this.onMouseUp());
+                this.canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), {passive: false});
+                this.canvas.addEventListener('touchmove', (e) => this.onTouchMove(e), {passive: false});
+                this.canvas.addEventListener('touchend', () => this.onMouseUp());
+            }
+
+            setGraph(nodesList, edgesList, highlightE = [], highlightN = []) {
+                this.resize();
+                this.edges = edgesList;
+                this.highlightedEdges = new Set(highlightE.map(e => `${e.u}-${e.v}`));
+                this.highlightedNodes = new Set(highlightN);
+
+                let cx = this.canvas.width / 2;
+                let cy = this.canvas.height / 2;
+                let radius = Math.min(cx, cy) * 0.6;
+                let angleStep = (2 * Math.PI) / (nodesList.length || 1);
+
+                nodesList.forEach((n, idx) => {
+                    if (!this.nodes[n]) {
+                        let angle = idx * angleStep;
+                        this.nodes[n] = {
+                            x: cx + radius * Math.cos(angle),
+                            y: cy + radius * Math.sin(angle),
+                            radius: 22
+                        };
+                    }
+                });
+
+                // Remove nodes no longer present
+                Object.keys(this.nodes).forEach(n => {
+                    if (!nodesList.includes(n)) delete this.nodes[n];
+                });
+
+                this.draw();
+            }
+
+            draw() {
+                if (!this.ctx) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw edges
+                this.edges.forEach(e => {
+                    let p1 = this.nodes[e.u];
+                    let p2 = this.nodes[e.v];
+                    if (!p1 || !p2) return;
+
+                    let key1 = `${e.u}-${e.v}`;
+                    let key2 = `${e.v}-${e.u}`;
+                    let isHl = this.highlightedEdges.has(key1) || this.highlightedEdges.has(key2);
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(p1.x, p1.y);
+                    this.ctx.lineTo(p2.x, p2.y);
+                    this.ctx.strokeStyle = isHl ? '#10b981' : '#475569';
+                    this.ctx.lineWidth = isHl ? 4 : 2;
+                    this.ctx.stroke();
+
+                    // Draw weight if available
+                    if (e.weight !== undefined && e.weight !== 1) {
+                        let mx = (p1.x + p2.x) / 2;
+                        let my = (p1.y + p2.y) / 2;
+                        this.ctx.fillStyle = '#f8fafc';
+                        this.ctx.beginPath();
+                        this.ctx.arc(mx, my, 12, 0, 2 * Math.PI);
+                        this.ctx.fill();
+                        this.ctx.strokeStyle = '#334155';
+                        this.ctx.lineWidth = 1;
+                        this.ctx.stroke();
+
+                        this.ctx.fillStyle = '#0f172a';
+                        this.ctx.font = 'bold 11px Inter';
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        this.ctx.fillText(e.weight, mx, my);
+                    }
+                });
+
+                // Draw nodes
+                Object.keys(this.nodes).forEach(n => {
+                    let p = this.nodes[n];
+                    let isHl = this.highlightedNodes.has(n);
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = isHl ? '#10b981' : '#1e293b';
+                    this.ctx.fill();
+                    this.ctx.lineWidth = 3;
+                    this.ctx.strokeStyle = isHl ? '#6ee7b7' : '#38bdf8';
+                    this.ctx.stroke();
+
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = 'bold 14px Inter';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(n, p.x, p.y);
+                });
+            }
+
+            getNodeAt(x, y) {
+                for (let n in this.nodes) {
+                    let p = this.nodes[n];
+                    let dist = Math.hypot(p.x - x, p.y - y);
+                    if (dist <= p.radius) return n;
+                }
+                return null;
+            }
+
+            onMouseDown(e) {
+                let rect = this.canvas.getBoundingClientRect();
+                let x = e.clientX - rect.left;
+                let y = e.clientY - rect.top;
+                this.draggingNode = this.getNodeAt(x, y);
+            }
+
+            onMouseMove(e) {
+                if (!this.draggingNode) return;
+                let rect = this.canvas.getBoundingClientRect();
+                let x = e.clientX - rect.left;
+                let y = e.clientY - rect.top;
+                this.nodes[this.draggingNode].x = x;
+                this.nodes[this.draggingNode].y = y;
+                this.draw();
+            }
+
+            onMouseUp() {
+                this.draggingNode = null;
+            }
+
+            onTouchStart(e) {
+                if (e.touches.length === 1) {
+                    let rect = this.canvas.getBoundingClientRect();
+                    let x = e.touches[0].clientX - rect.left;
+                    let y = e.touches[0].clientY - rect.top;
+                    this.draggingNode = this.getNodeAt(x, y);
+                }
+            }
+
+            onTouchMove(e) {
+                if (!this.draggingNode || e.touches.length !== 1) return;
+                let rect = this.canvas.getBoundingClientRect();
+                let x = e.touches[0].clientX - rect.left;
+                let y = e.touches[0].clientY - rect.top;
+                this.nodes[this.draggingNode].x = x;
+                this.nodes[this.draggingNode].y = y;
+                this.draw();
+                e.preventDefault();
+            }
+        }
+
+        // Instances
+        let surveyVisualizer = new GraphVisualizer('canvas-survey');
+        let ehVisualizer = new GraphVisualizer('canvas-eh');
+        let weightedVisualizer = new GraphVisualizer('canvas-weighted');
+
+        // --- SAMPLE LOADERS ---
+        function loadSampleGraph(type) {
+            if (type === 1) {
+                document.getElementById('survey-edges').value = "A-B, A-C, B-C, C-D, D-E";
+                document.getElementById('survey-directed').checked = false;
+            } else {
+                document.getElementById('survey-edges').value = "1-2, 1-3, 2-4, 3-4, 4-5";
+                document.getElementById('survey-directed').checked = false;
+            }
+            analyzeGraph();
+        }
+
+        function loadEHSample(type) {
+            if (type === 1) {
+                // Eulerian graph
+                document.getElementById('eh-edges').value = "A-B, B-C, C-A, A-D, D-C";
+            } else {
+                // Hamiltonian graph
+                document.getElementById('eh-edges').value = "A-B, B-C, C-D, D-E, E-A, A-C";
+            }
+            analyzeEulerHamilton();
+        }
+
+        function loadWeightedSample(type) {
+            document.getElementById('weighted-edges').value = "A-B:2, A-C:3, B-C:1, B-D:4, C-D:1, C-E:5, D-E:2";
+            runWeightedAlgorithm();
+        }
+
+        // --- TAB 1: KHẢO SÁT ĐỒ THỊ ---
+        function analyzeGraph() {
+            let text = document.getElementById('survey-edges').value;
+            let isDirected = document.getElementById('survey-directed').checked;
+            let { nodes, edges, adjList } = parseGraphInput(text, isDirected);
+
+            if (nodes.length === 0) {
+                alert("Vui lòng nhập danh sách cạnh hợp lệ!");
+                return;
+            }
+
+            surveyVisualizer.setGraph(nodes, edges);
+            document.getElementById('survey-results').classList.remove('hidden');
+
+            // a) Adjacency list
+            let adjHTML = '';
+            nodes.forEach(n => {
+                let neighbors = adjList[n].map(item => `${item.node}(${item.weight})`).join(', ');
+                adjHTML += `<div><strong>${n}:</strong> [ ${neighbors} ]</div>`;
+            });
+            document.getElementById('result-adj-list').innerHTML = adjHTML;
+
+            // b) Degrees
+            let degHTML = '';
+            nodes.forEach(n => {
+                if (isDirected) {
+                    let inDeg = 0, outDeg = adjList[n].length;
+                    nodes.forEach(u => {
+                        if (adjList[u].some(item => item.node === n)) inDeg++;
+                    });
+                    degHTML += `<div><strong>${n}:</strong> Bậc vào = ${inDeg}, Bậc ra = ${outDeg}</div>`;
+                } else {
+                    let deg = adjList[n].length;
+                    degHTML += `<div><strong>${n}:</strong> Bậc (deg) = ${deg}</div>`;
+                }
+            });
+            document.getElementById('result-degrees').innerHTML = degHTML;
+
+            // c) Connectivity check using BFS/DFS
+            let visited = new Set();
+            let queue = [nodes[0]];
+            visited.add(nodes[0]);
+            while(queue.length > 0) {
+                let curr = queue.shift();
+                adjList[curr].forEach(neighbor => {
+                    if (!visited.has(neighbor.node)) {
+                        visited.add(neighbor.node);
+                        queue.push(neighbor.node);
+                    }
+                });
+            }
+
+            let isConnected = visited.size === nodes.length;
+            let connHTML = `
+                <div class="font-semibold ${isConnected ? 'text-emerald-700' : 'text-amber-700'}">
+                    ${isConnected ? '<i class="fa-solid fa-circle-check"></i> Đồ thị LIÊN THÔNG' : '<i class="fa-solid fa-triangle-exclamation"></i> Đồ thị KHÔNG LIÊN THÔNG'}
+                </div>
+                <p class="text-xs text-slate-600 mt-1">
+                    ${isConnected 
+                        ? 'Tất cả các đỉnh đều có đường đi đến nhau (Số thành phần liên thông = 1).' 
+                        : `Đồ thị phân rã thành nhiều thành phần. Số đỉnh duyệt được từ ${nodes[0]}: ${visited.size}/${nodes.length}.`}
+                </p>
+            `;
+            document.getElementById('result-connectivity').innerHTML = connHTML;
+        }
+
+
+        // --- TAB 2: EULER & HAMILTON ---
+        function analyzeEulerHamilton() {
+            let text = document.getElementById('eh-edges').value;
+            let { nodes, edges, adjList } = parseGraphInput(text, false);
+
+            if (nodes.length === 0) {
+                alert("Vui lòng nhập danh sách cạnh hợp lệ!");
+                return;
+            }
+
+            ehVisualizer.setGraph(nodes, edges);
+            document.getElementById('eh-results').classList.remove('hidden');
+
+            // --- EULER ANALYSIS ---
+            let oddNodes = nodes.filter(n => adjList[n].length % 2 !== 0);
+            let eulerStatusHTML = '';
+            let eulerPathDiv = document.getElementById('euler-path');
+            let eulerRepairDiv = document.getElementById('euler-repair');
+            eulerPathDiv.classList.add('hidden');
+            eulerRepairDiv.classList.add('hidden');
+
+            if (oddNodes.length === 0) {
+                eulerStatusHTML = `<p class="text-emerald-700 font-semibold"><i class="fa-solid fa-check-circle"></i> Đồ thị có CHU TRÌNH EULER (tất cả các đỉnh có bậc chẵn).</p>`;
+                let path = findEulerPath(nodes, adjList, edges);
+                eulerPathDiv.innerHTML = `<strong>Chu trình Euler cụ thể:</strong> ${path.join(' → ')}`;
+                eulerPathDiv.classList.remove('hidden');
+            } else if (oddNodes.length === 2) {
+                eulerStatusHTML = `<p class="text-amber-700 font-semibold"><i class="fa-solid fa-info-circle"></i> Đồ thị có ĐƯỜNG ĐI EULER (có đúng 2 đỉnh bậc lẻ: ${oddNodes.join(', ')}).</p>`;
+                let path = findEulerPath(nodes, adjList, edges, oddNodes[0]);
+                eulerPathDiv.innerHTML = `<strong>Đường đi Euler cụ thể:</strong> ${path.join(' → ')}`;
+                eulerPathDiv.classList.remove('hidden');
+            } else {
+                eulerStatusHTML = `<p class="text-rose-700 font-semibold"><i class="fa-solid fa-xmark-circle"></i> Đồ thị KHÔNG có chu trình/đường đi Euler (có ${oddNodes.length} đỉnh bậc lẻ: ${oddNodes.join(', ')}).</p>`;
+                eulerRepairDiv.innerHTML = `<strong>Đề xuất điều chỉnh tối thiểu:</strong> Cần thêm cạnh nối các đỉnh bậc lẻ hoặc bổ sung/bớt cạnh để số đỉnh bậc lẻ về 0 hoặc 2.`;
+                eulerRepairDiv.classList.remove('hidden');
+            }
+            document.getElementById('euler-status').innerHTML = eulerStatusHTML;
+
+            // --- HAMILTON ANALYSIS ---
+            let hamiltonStatusHTML = `<p class="text-slate-700">Đang kiểm tra điều kiện tồn tại chu trình Hamilton...</p>`;
+            let hamiltonPathDiv = document.getElementById('hamilton-path');
+            let hamiltonRepairDiv = document.getElementById('hamilton-repair');
+            hamiltonPathDiv.classList.add('hidden');
+            hamiltonRepairDiv.classList.add('hidden');
+
+            let hPath = findHamiltonCycle(nodes, adjList);
+            if (hPath) {
+                hamiltonStatusHTML = `<p class="text-emerald-700 font-semibold"><i class="fa-solid fa-check-circle"></i> Đồ thị có CHU TRÌNH HAMILTON.</p>`;
+                hamiltonPathDiv.innerHTML = `<strong>Chu trình Hamilton cụ thể:</strong> ${hPath.join(' → ')}`;
+                hamiltonPathDiv.classList.remove('hidden');
+            } else {
+                hamiltonStatusHTML = `<p class="text-rose-700 font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Không tìm thấy chu trình Hamilton tự động bằng thuật toán vét cạn.</p>`;
+                hamiltonRepairDiv.innerHTML = `<strong>Đề xuất điều chỉnh:</strong> Bổ sung thêm các cạnh tắt (đường nối trực tiếp giữa các đỉnh) để thỏa mãn định lý Ore/Dirac hoặc điều kiện liên thông chặt chẽ hơn.`;
+                hamiltonRepairDiv.classList.remove('hidden');
+            }
+            document.getElementById('hamilton-status').innerHTML = hamiltonStatusHTML;
+        }
+
+        // Hierholzer's algorithm for Euler path/cycle
+        function findEulerPath(nodes, adjList, edges, startNode = null) {
+            let adj = JSON.parse(JSON.stringify(adjList));
+            let edgeCount = {};
+            edges.forEach(e => {
+                let k1 = `${e.u}-${e.v}`, k2 = `${e.v}-${e.u}`;
+                edgeCount[k1] = (edgeCount[k1] || 0) + 1;
+                edgeCount[k2] = (edgeCount[k2] || 0) + 1;
+            });
+
+            let start = startNode || nodes[0];
+            let stack = [start];
+            let path = [];
+
+            while (stack.length > 0) {
+                let curr = stack[stack.length - 1];
+                if (adj[curr] && adj[curr].length > 0) {
+                    let nextObj = adj[curr].pop();
+                    let next = nextObj.node;
+                    // Remove reverse edge in undirected graph
+                    let revIdx = adj[next].findIndex(item => item.node === curr);
+                    if (revIdx !== -1) adj[next].splice(revIdx, 1);
+                    stack.push(next);
+                } else {
+                    path.push(stack.pop());
+                }
+            }
+            return path.reverse();
+        }
+
+        // Backtracking for Hamilton cycle
+        function findHamiltonCycle(nodes, adjList) {
+            let path = [nodes[0]];
+            let visited = new Set([nodes[0]]);
+
+            function backtrack(curr) {
+                if (path.length === nodes.length) {
+                    if (adjList[curr].some(item => item.node === nodes[0])) {
+                        path.push(nodes[0]);
+                        return true;
+                    }
+                    return false;
+                }
+
+                for (let neighborObj of adjList[curr]) {
+                    let next = neighborObj.node;
+                    if (!visited.has(next)) {
+                        visited.add(next);
+                        path.push(next);
+                        if (backtrack(next)) return true;
+                        path.pop();
+                        visited.delete(next);
+                    }
+                }
+                return false;
+            }
+
+            if (backtrack(nodes[0])) return path;
+            return null;
+        }
+
+
+        // --- TAB 3: MST & SHORTEST PATH SIMULATION ---
+        let simSteps = [];
+        let currentStepIdx = 0;
+        let simTimer = null;
+        let isPlaying = false;
+
+        function toggleAlgoParams() {
+            let algo = document.getElementById('algo-select').value;
+            let srcContainer = document.getElementById('dijkstra-source-container');
+            if (algo === 'dijkstra') {
+                srcContainer.classList.remove('hidden');
+                document.getElementById('canvas-title-badge').innerText = "Mô phỏng Dijkstra";
+            } else if (algo === 'prim') {
+                srcContainer.classList.add('hidden');
+                document.getElementById('canvas-title-badge').innerText = "Mô phỏng Prim";
+            } else {
+                srcContainer.classList.add('hidden');
+                document.getElementById('canvas-title-badge').innerText = "Mô phỏng Kruskal";
+            }
+        }
+
+        function runWeightedAlgorithm() {
+            let text = document.getElementById('weighted-edges').value;
+            let algo = document.getElementById('algo-select').value;
+            let { nodes, edges } = parseGraphInput(text, true);
+
+            if (nodes.length === 0 || edges.length === 0) {
+                alert("Vui lòng nhập danh sách cạnh có trọng số hợp lệ!");
+                return;
+            }
+
+            document.getElementById('weighted-results').classList.remove('hidden');
+            simSteps = [];
+
+            if (algo === 'kruskal') {
+                simSteps = generateKruskalSteps(nodes, edges);
+            } else if (algo === 'prim') {
+                simSteps = generatePrimSteps(nodes, edges);
+            } else {
+                let src = document.getElementById('dijkstra-source').value.toUpperCase();
+                if (!nodes.includes(src)) src = nodes[0];
+                simSteps = generateDijkstraSteps(nodes, edges, src);
+            }
+
+            currentStepIdx = 0;
+            renderStep();
+        }
+
+        // Kruskal Steps Generator
+        function generateKruskalSteps(nodes, edges) {
+            let steps = [];
+            let sortedEdges = [...edges].sort((a, b) => a.weight - b.weight);
+            let parent = {};
+            nodes.forEach(n => parent[n] = n);
+
+            function find(i) {
+                if (parent[i] === i) return i;
+                return parent[i] = find(parent[i]);
+            }
+
+            steps.push({
+                explanation: `Khởi tạo thuật toán Kruskal. Sắp xếp ${edges.length} cạnh theo trọng số tăng dần.`,
+                mstEdges: [],
+                activeNodes: []
+            });
+
+            let mst = [];
+            let totalWeight = 0;
+
+            sortedEdges.forEach(e => {
+                let rootU = find(e.u);
+                let rootV = find(e.v);
+                if (rootU !== rootV) {
+                    parent[rootU] = rootV;
+                    mst.push(e);
+                    totalWeight += e.weight;
+                    steps.push({
+                        explanation: `Chọn cạnh <strong>${e.u}-${e.v}</strong> (trọng số ${e.weight}) do không tạo chu trình. Tổng trọng số hiện tại: ${totalWeight}`,
+                        mstEdges: [...mst],
+                        activeNodes: [e.u, e.v]
+                    });
+                } else {
+                    steps.push({
+                        explanation: `Xét cạnh <strong>${e.u}-${e.v}</strong> (trọng số ${e.weight}): Bỏ qua vì tạo chu trình khép kín.`,
+                        mstEdges: [...mst],
+                        activeNodes: [e.u, e.v]
+                    });
+                }
+            });
+
+            steps.push({
+                explanation: `Hoàn tất thuật toán Kruskal! Cây khung nhỏ nhất (MST) đã hoàn thành với tổng trọng số = <strong>${totalWeight}</strong>.`,
+                mstEdges: [...mst],
+                activeNodes: nodes,
+                isFinal: true,
+                totalWeight
+            });
+
+            return steps;
+        }
+
+        // Prim Steps Generator
+        function generatePrimSteps(nodes, edges) {
+            let steps = [];
+            let adj = {};
+            nodes.forEach(n => adj[n] = []);
+            edges.forEach(e => {
+                adj[e.u].push({ node: e.v, weight: e.weight });
+                adj[e.v].push({ node: e.u, weight: e.weight });
+            });
+
+            let visited = new Set([nodes[0]]);
+            let mst = [];
+            let totalWeight = 0;
+
+            steps.push({
+                explanation: `Khởi tạo thuật toán Prim xuất phát từ đỉnh <strong>${nodes[0]}</strong>.`,
+                mstEdges: [],
+                activeNodes: [nodes[0]]
+            });
+
+            while (visited.size < nodes.length) {
+                let minEdge = null;
+                let minW = Infinity;
+
+                edges.forEach(e => {
+                    let inU = visited.has(e.u);
+                    let inV = visited.has(e.v);
+                    if ((inU && !inV) || (!inU && inV)) {
+                        if (e.weight < minW) {
+                            minW = e.weight;
+                            minEdge = e;
+                        }
+                    }
+                });
+
+                if (!minEdge) break;
+
+                let newNode = visited.has(minEdge.u) ? minEdge.v : minEdge.u;
+                visited.add(newNode);
+                mst.push(minEdge);
+                totalWeight += minEdge.weight;
+
+                steps.push({
+                    explanation: `Thêm đỉnh <strong>${newNode}</strong> qua cạnh <strong>${minEdge.u}-${minEdge.v}</strong> (trọng số ${minEdge.weight}). Tổng trọng số: ${totalWeight}`,
+                    mstEdges: [...mst],
+                    activeNodes: Array.from(visited)
+                });
+            }
+
+            steps.push({
+                explanation: `Hoàn tất Prim! Cây khung nhỏ nhất (MST) có tổng trọng số = <strong>${totalWeight}</strong>.`,
+                mstEdges: [...mst],
+                activeNodes: nodes,
+                isFinal: true,
+                totalWeight
+            });
+
+            return steps;
+        }
+
+        // Dijkstra Steps Generator
+        function generateDijkstraSteps(nodes, edges, startNode) {
+            let steps = [];
+            let adj = {};
+            nodes.forEach(n => adj[n] = []);
+            edges.forEach(e => {
+                adj[e.u].push({ node: e.v, weight: e.weight });
+                adj[e.v].push({ node: e.u, weight: e.weight });
+            });
+
+            let dist = {};
+            let prev = {};
+            let unvisited = new Set(nodes);
+
+            nodes.forEach(n => dist[n] = Infinity);
+            dist[startNode] = 0;
+
+            steps.push({
+                explanation: `Khởi tạo Dijkstra từ đỉnh gốc <strong>${startNode}</strong> với khoảng cách ban đầu bằng 0, các đỉnh khác bằng vô cực.`,
+                mstEdges: [],
+                activeNodes: [startNode]
+            });
+
+            while (unvisited.size > 0) {
+                let curr = null;
+                let minDist = Infinity;
+                unvisited.forEach(n => {
+                    if (dist[n] < minDist) {
+                        minDist = dist[n];
+                        curr = n;
+                    }
+                });
+
+                if (curr === null || minDist === Infinity) break;
+                unvisited.delete(curr);
+
+                if (curr !== startNode && prev[curr]) {
+                    // find edge for visualization
+                }
+
+                adj[curr].forEach(neighbor => {
+                    if (unvisited.has(neighbor.node)) {
+                        let alt = dist[curr] + neighbor.weight;
+                        if (alt < dist[neighbor.node]) {
+                            dist[neighbor.node] = alt;
+                            prev[neighbor.node] = { node: curr, weight: neighbor.weight };
+                            steps.push({
+                                explanation: `Cập nhật khoảng cách tới <strong>${neighbor.node}</strong> qua ${curr}: dist = ${alt}`,
+                                mstEdges: getDijkstraPathEdges(prev, startNode),
+                                activeNodes: [curr, neighbor.node]
+                            });
+                        }
+                    }
+                });
+            }
+
+            let finalEdges = getDijkstraPathEdges(prev, startNode);
+            let resultSummary = nodes.map(n => `${n}: ${dist[n] === Infinity ? 'Vô cực' : dist[n]}`).join(', ');
+
+            steps.push({
+                explanation: `Hoàn tất Dijkstra! Khoảng cách ngắn nhất từ ${startNode}: [ ${resultSummary} ]`,
+                mstEdges: finalEdges,
+                activeNodes: nodes,
+                isFinal: true,
+                distances: dist
+            });
+
+            return steps;
+        }
+
+        function getDijkstraPathEdges(prev, startNode) {
+            let edges = [];
+            Object.keys(prev).forEach(n => {
+                if (prev[n]) {
+                    edges.push({ u: n, v: prev[n].node });
+                }
+            });
+            return edges;
+        }
+
+        function renderStep() {
+            if (simSteps.length === 0) return;
+            let step = simSteps[currentStepIdx];
+            let text = document.getElementById('weighted-edges').value;
+            let { nodes, edges } = parseGraphInput(text, true);
+
+            weightedVisualizer.setGraph(nodes, edges, step.mstEdges, step.activeNodes);
+            document.getElementById('step-explanation').innerHTML = step.explanation;
+            document.getElementById('step-indicator').innerText = `Bước ${currentStepIdx + 1} / ${simSteps.length}`;
+
+            if (step.isFinal) {
+                let resHTML = `<p class="text-emerald-700 font-semibold mb-2"><i class="fa-solid fa-circle-check"></i> Đã tìm thấy kết quả tối ưu!</p>`;
+                if (step.totalWeight !== undefined) {
+                    resHTML += `<p>Tổng trọng số cây khung nhỏ nhất (MST): <strong>${step.totalWeight}</strong></p>`;
+                }
+                if (step.distances) {
+                    resHTML += `<div class="font-mono text-xs space-y-1 mt-2">`;
+                    Object.keys(step.distances).forEach(n => {
+                        resHTML += `<div>Khoảng cách ngắn nhất tới ${n}: <strong>${step.distances[n]}</strong></div>`;
+                    });
+                    resHTML += `</div>`;
+                }
+                document.getElementById('final-optimal-result').innerHTML = resHTML;
+            } else {
+                document.getElementById('final-optimal-result').innerHTML = `<p class="text-slate-500 italic">Đang chạy thuật toán, kết quả sẽ hiển thị ở bước cuối cùng...</p>`;
+            }
+        }
+
+        function stepNext() {
+            if (currentStepIdx < simSteps.length - 1) {
+                currentStepIdx++;
+                renderStep();
+            }
+        }
+
+        function stepPrev() {
+            if (currentStepIdx > 0) {
+                currentStepIdx--;
+                renderStep();
+            }
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            let btn = document.getElementById('btn-play');
+            if (isPlaying) {
+                btn.innerHTML = `<i class="fa-solid fa-pause text-xs"></i>`;
+                simTimer = setInterval(() => {
+                    if (currentStepIdx < simSteps.length - 1) {
+                        currentStepIdx++;
+                        renderStep();
+                    } else {
+                        togglePlay();
+                    }
+                }, 1200);
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-play text-xs"></i>`;
+                clearInterval(simTimer);
+            }
+        }
+
+        function initCanvas(canvasId) {
+            let vis = canvasId === 'canvas-survey' ? surveyVisualizer : (canvasId === 'canvas-eh' ? ehVisualizer : weightedVisualizer);
+            vis.resize();
+            vis.draw();
+        }
+
+        window.onload = function() {
+            loadSampleGraph(1);
+            loadEHSample(1);
+            loadWeightedSample(1);
+            window.addEventListener('resize', () => {
+                initCanvas('canvas-survey');
+                initCanvas('canvas-eh');
+                initCanvas('canvas-weighted');
+            });
+        };
+    </script>
+</body>
+</html>
